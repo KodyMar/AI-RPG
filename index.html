@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Adventure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            line-height: 1.6;
+            background-image: linear-gradient(45deg, #0f3460 25%, transparent 25%), 
+                              linear-gradient(-45deg, #0f3460 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #0f3460 75%), 
+                              linear-gradient(-45deg, transparent 75%, #0f3460 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Статус бар */
+        .status-bar {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            border: 2px solid #0f3460;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .player-info h2 {
+            color: #e94560;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .health-bar, .mana-bar, .exp-bar {
+            width: 100px;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e74c3c, #e94560);
+        }
+
+        .mana-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #4cc9f0);
+        }
+
+        .exp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+        }
+
+        /* Игровая область */
+        .game-area {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            min-height: 200px;
+            border: 2px solid #0f3460;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .location {
+            margin-bottom: 15px;
+        }
+
+        .location h3 {
+            color: #4cc9f0;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .location p {
+            margin-bottom: 10px;
+        }
+
+        /* Боевая система */
+        .battle-area {
+            background: #1e2a47;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #4cc9f0;
+        }
+
+        .enemy-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .enemy-icon {
+            width: 60px;
+            height: 60px;
+            background: #e74c3c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border: 2px solid #fff;
+        }
+
+        .enemy-stats {
+            flex-grow: 1;
+        }
+
+        .enemy-name {
+            font-weight: bold;
+            color: #e94560;
+        }
+
+        .enemy-health-bar {
+            width: 100%;
+            height: 12px;
+            background: #333;
+            border-radius: 6px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+
+        .enemy-health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e74c3c, #e94560);
+            transition: width 0.3s ease;
+        }
+
+        /* Действия */
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            background: linear-gradient(145deg, #0f3460, #1e2a47);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            border: 1px solid #4cc9f0;
+        }
+
+        .action-btn:hover {
+            background: linear-gradient(145deg, #e94560, #c0392b);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-btn:disabled {
+            background: #333;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .spell-btn {
+            background: linear-gradient(145deg, #8e44ad, #9b59b6);
+            border-color: #9b59b6;
+        }
+
+        .spell-btn:hover {
+            background: linear-gradient(145deg, #9b59b6, #8e44ad);
+        }
+
+        .battle-btn {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            border-color: #e94560;
+        }
+
+        /* Лог событий */
+        .event-log {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 10px;
+            height: 150px;
+            overflow-y: auto;
+            font-size: 14px;
+            border: 1px solid #4cc9f0;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-left: 3px solid #e94560;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .log-entry.spell {
+            border-left-color: #8e44ad;
+        }
+
+        .log-entry.quest {
+            border-left-color: #f39c12;
+        }
+
+        .log-entry.danger {
+            border-left-color: #e74c3c;
+        }
+
+        .log-entry.heal {
+            border-left-color: #2ecc71;
+        }
+
+        /* Инвентарь */
+        .inventory {
+            margin-top: 20px;
+        }
+
+        .inventory h3 {
+            color: #4cc9f0;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .inventory-items {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .item {
+            background: linear-gradient(145deg, #0f3460, #1e2a47);
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #4cc9f0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .item:hover {
+            background: linear-gradient(145deg, #e94560, #c0392b);
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .item.usable {
+            border-color: #2ecc71;
+        }
+
+        .item.consumable {
+            border-color: #e74c3c;
+        }
+
+        /* Осада */
+        .siege-info {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+            animation: pulse 2s infinite;
+            border: 1px solid #fff;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        /* Смерть */
+        .death-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .death-screen h2 {
+            color: #e74c3c;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .death-screen p {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        .restart-btn {
+            background: linear-gradient(145deg, #e94560, #c0392b);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            border: 1px solid #fff;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Визуальные улучшения */
+        .gold-counter {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .level-badge {
+            background: #e94560;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+
+        .damage-text {
+            color: #e74c3c;
+            font-weight: bold;
+            animation: pop 0.3s ease;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .heal-text {
+            color: #2ecc71;
+            font-weight: bold;
+            animation: pop 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Статус бар -->
+        <div class="status-bar">
+            <div class="player-info">
+                <h2 id="player-name">Искатель Приключений</h2>
+                <p>Уровень: <span id="player-level">1</span> | Золото: <span class="gold-counter" id="player-gold">50</span></p>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div>❤️ Здоровье</div>
+                    <div class="health-bar">
+                        <div class="health-fill" id="health-fill"></div>
+                    </div>
+                    <span id="health-text">100/100</span>
+                </div>
+                <div class="stat">
+                    <div>🔷 Мана</div>
+                    <div class="mana-bar">
+                        <div class="mana-fill" id="mana-fill"></div>
+                    </div>
+                    <span id="mana-text">50/50</span>
+                </div>
+                <div class="stat">
+                    <div>⭐ Опыт</div>
+                    <div class="exp-bar">
+                        <div class="exp-fill" id="exp-fill"></div>
+                    </div>
+                    <span id="exp-text">0/100</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Игровая область -->
+        <div class="game-area">
+            <div id="siege-warning" class="siege-info" style="display: none;">
+                ⚔️ ДЕРЕВНЯ ПОД ОСАДОЙ! Защитите жителей! ⚔️
+            </div>
+            
+            <div class="location" id="location">
+                <h3>🏠 Начальная деревня</h3>
+                <p>Вы стоите в центре маленькой деревни. Вокруг вас несколько домов и магазин.</p>
+            </div>
+
+            <!-- Боевая область -->
+            <div id="battle-area" class="battle-area" style="display: none;">
+                <div class="enemy-info">
+                    <div class="enemy-icon" id="enemy-icon">👹</div>
+                    <div class="enemy-stats">
+                        <div class="enemy-name" id="enemy-name">Враг</div>
+                        <div class="enemy-health-bar">
+                            <div class="enemy-health-fill" id="enemy-health-fill"></div>
+                        </div>
+                        <div id="enemy-health-text">100/100</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions" id="actions">
+                <!-- Кнопки действий будут генерироваться JavaScript -->
+            </div>
+
+            <div class="inventory">
+                <h3>🎒 Инвентарь (кликайте на предметы для использования)</h3>
+                <div class="inventory-items" id="inventory">
+                    <!-- Предметы будут добавляться через JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Лог событий -->
+        <div class="event-log" id="event-log">
+            <div class="log-entry">🎮 Добро пожаловать в RPG приключение!</div>
+        </div>
+    </div>
+
+    <!-- Экран смерти -->
+    <div id="death-screen" class="death-screen" style="display: none;">
+        <h2>💀 ВЫ УМЕРЛИ</h2>
+        <p>Ваше приключение подошло к концу...</p>
+        <p>Достигнутый уровень: <span id="death-level">1</span></p>
+        <p>Собрано золота: <span id="death-gold">0</span></p>
+        <button class="restart-btn" onclick="restartGame()">🔄 Начать заново</button>
+    </div>
+
+    <script>
+        // Игровые данные
+        const gameState = {
+            player: {
+                name: "Искатель Приключений",
+                level: 1,
+                health: 100,
+                maxHealth: 100,
+                mana: 50,
+                maxMana: 50,
+                experience: 0,
+                nextLevelExp: 100,
+                gold: 50,
+                inventory: [
+                    { name: "❤️ Малое зелье здоровья", type: "consumable", effect: { health: 30 } },
+                    { name: "⚔️ Простой меч", type: "weapon", damage: 10 }
+                ],
+                spells: [
+                    { name: "🔥 Огненный шар", cost: 15, damage: 25, description: "Наносит 25 урона огнем" },
+                    { name: "✨ Исцеление", cost: 20, heal: 35, description: "Восстанавливает 35 здоровья" },
+                    { name: "❄️ Ледяная стрела", cost: 12, damage: 18, slow: true, description: "Наносит 18 урона и замедляет врага" }
+                ]
+            },
+            currentLocation: "village",
+            currentBattle: null,
+            siegeActive: false,
+            siegeCounter: 0,
+            merchantHappy: false,
+            purchasesCount: 0,
+            locations: {
+                village: {
+                    name: "🏠 Начальная деревня",
+                    description: "Вы стоите в центре маленькой деревни. Вокруг вас несколько домов и магазин.",
+                    actions: [
+                        { text: "🌲 Отправиться в лес", target: "forest", type: "travel" },
+                        { text: "🛒 Зайти в магазин", target: "shop", type: "travel" },
+                        { text: "💬 Поговорить с жителями", type: "dialogue" },
+                        { text: "🛡️ Защищать деревню", type: "defend", requirements: { siege: true } }
+                    ]
+                },
+                forest: {
+                    name: "🌲 Тёмный лес",
+                    description: "Вы в густом лесу. Слышны странные звуки...",
+                    actions: [
+                        { text: "🔍 Исследовать лес", type: "explore" },
+                        { text: "🏠 Вернуться в деревню", target: "village", type: "travel" },
+                        { text: "🎯 Охотиться на зверей", type: "hunt" },
+                        { text: "🔥 Огненный шар (15 маны)", type: "spell", spell: 0, requirements: { mana: 15 } },
+                        { text: "✨ Исцеление (20 маны)", type: "spell", spell: 1, requirements: { mana: 20 } }
+                    ]
+                },
+                shop: {
+                    name: "🛒 Магазин торговца",
+                    description: "Вы в маленьком магазине. Торговец предлагает свои товары.",
+                    actions: [
+                        { text: "❤️ Купить малое зелье здоровья (10 золота)", cost: 10, type: "buy", item: { name: "❤️ Малое зелье здоровья", type: "consumable", effect: { health: 30 } } },
+                        { text: "💖 Купить большое зелье здоровья (25 золота)", cost: 25, type: "buy", item: { name: "💖 Большое зелье здоровья", type: "consumable", effect: { health: 70 } } },
+                        { text: "🔷 Купить зелье маны (15 золота)", cost: 15, type: "buy", item: { name: "🔷 Малое зелье маны", type: "consumable", effect: { mana: 25 } } },
+                        { text: "⚔️ Купить улучшенный меч (50 золота)", cost: 50, type: "buy", item: { name: "⚔️ Улучшенный меч", type: "weapon", damage: 20 } },
+                        { text: "💍 Купить кольцо мага (40 золота)", cost: 40, type: "buy", item: { name: "💍 Кольцо мага", type: "accessory", effect: { maxMana: 30 } } },
+                        { text: "🏠 Вернуться в деревню", target: "village", type: "travel" }
+                    ]
+                }
+            },
+            // Враги для охоты
+            huntEnemies: [
+                { name: "🐺 Слабый волк", health: 20, maxHealth: 20, damage: 5, exp: 10, gold: 5, icon: "🐺" },
+                { name: "🐗 Кабан", health: 35, maxHealth: 35, damage: 8, exp: 18, gold: 8, icon: "🐗" },
+                { name: "🐻 Медведь", health: 60, maxHealth: 60, damage: 15, exp: 35, gold: 15, icon: "🐻" },
+                { name: "👹 Лесной тролль", health: 80, maxHealth: 80, damage: 20, exp: 50, gold: 25, icon: "👹" }
+            ],
+            // Враги для осады
+            siegeEnemies: [
+                { name: "💀 Бандит", health: 40, maxHealth: 40, damage: 10, exp: 20, gold: 10, icon: "💀" },
+                { name: "🗡️ Разбойник", health: 60, maxHealth: 60, damage: 15, exp: 30, gold: 15, icon: "🗡️" },
+                { name: "👺 Гоблин", health: 30, maxHealth: 30, damage: 8, exp: 15, gold: 8, icon: "👺" },
+                { name: "👹 Орк", health: 80, maxHealth: 80, damage: 18, exp: 40, gold: 20, icon: "👹" },
+                { name: "👑 Лидер бандитов", health: 120, maxHealth: 120, damage: 25, exp: 80, gold: 50, icon: "👑" }
+            ]
+        };
+
+        // DOM элементы
+        const elements = {
+            playerName: document.getElementById('player-name'),
+            playerLevel: document.getElementById('player-level'),
+            playerGold: document.getElementById('player-gold'),
+            healthFill: document.getElementById('health-fill'),
+            healthText: document.getElementById('health-text'),
+            manaFill: document.getElementById('mana-fill'),
+            manaText: document.getElementById('mana-text'),
+            expFill: document.getElementById('exp-fill'),
+            expText: document.getElementById('exp-text'),
+            location: document.getElementById('location'),
+            actions: document.getElementById('actions'),
+            inventory: document.getElementById('inventory'),
+            eventLog: document.getElementById('event-log'),
+            siegeWarning: document.getElementById('siege-warning'),
+            deathScreen: document.getElementById('death-screen'),
+            deathLevel: document.getElementById('death-level'),
+            deathGold: document.getElementById('death-gold'),
+            battleArea: document.getElementById('battle-area'),
+            enemyIcon: document.getElementById('enemy-icon'),
+            enemyName: document.getElementById('enemy-name'),
+            enemyHealthFill: document.getElementById('enemy-health-fill'),
+            enemyHealthText: document.getElementById('enemy-health-text')
+        };
+
+        // Функции игры
+        function updateUI() {
+            // Обновляем статус
+            const player = gameState.player;
+            elements.playerName.textContent = player.name;
+            elements.playerLevel.textContent = player.level;
+            elements.playerGold.textContent = player.gold;
+            
+            // Обновляем здоровье
+            const healthPercent = (player.health / player.maxHealth) * 100;
+            elements.healthFill.style.width = healthPercent + '%';
+            elements.healthText.textContent = player.health + '/' + player.maxHealth;
+            
+            // Обновляем ману
+            const manaPercent = (player.mana / player.maxMana) * 100;
+            elements.manaFill.style.width = manaPercent + '%';
+            elements.manaText.textContent = player.mana + '/' + player.maxMana;
+            
+            // Обновляем опыт
+            const expPercent = (player.experience / player.nextLevelExp) * 100;
+            elements.expFill.style.width = expPercent + '%';
+            elements.expText.textContent = player.experience + '/' + player.nextLevelExp;
+            
+            // Обновляем инвентарь
+            updateInventory();
+            
+            // Проверяем смерть
+            if (player.health <= 0) {
+                showDeathScreen();
+            }
+        }
+
+        function updateLocation() {
+            const location = gameState.locations[gameState.currentLocation];
+            elements.location.innerHTML = `
+                <h3>${location.name}</h3>
+                <p>${location.description}</p>
+            `;
+            
+            // Показываем/скрываем предупреждение об осаде
+            if (gameState.siegeActive && gameState.currentLocation === "village") {
+                elements.siegeWarning.style.display = 'block';
+            } else {
+                elements.siegeWarning.style.display = 'none';
+            }
+            
+            // Обновляем диалог торговца
+            if (gameState.currentLocation === "shop" && gameState.merchantHappy) {
+                elements.location.innerHTML += `<p><em>Торговец улыбается: "Спасибо за покупки! Бизнес идет отлично!"</em></p>`;
+            }
+            
+            // Очищаем и создаем кнопки действий
+            elements.actions.innerHTML = '';
+            location.actions.forEach(action => {
+                // Проверяем требования для действия
+                if (action.requirements) {
+                    if (action.requirements.siege && !gameState.siegeActive) {
+                        return; // Пропускаем это действие
+                    }
+                    if (action.requirements.mana && gameState.player.mana < action.requirements.mana) {
+                        return; // Пропускаем если недостаточно маны
+                    }
+                }
+                
+                const button = document.createElement('button');
+                button.className = 'action-btn';
+                
+                // Добавляем класс для заклинаний
+                if (action.type === 'spell') {
+                    button.classList.add('spell-btn');
+                }
+                if (action.type === 'hunt' || action.type === 'defend') {
+                    button.classList.add('battle-btn');
+                }
+                
+                button.textContent = action.text;
+                button.onclick = () => handleAction(action);
+                
+                // Отключаем кнопку покупки, если недостаточно золота
+                if (action.type === 'buy' && gameState.player.gold < action.cost) {
+                    button.disabled = true;
+                }
+                
+                elements.actions.appendChild(button);
+            });
+        }
+
+        function updateBattleUI(enemy) {
+            if (!enemy) {
+                elements.battleArea.style.display = 'none';
+                return;
+            }
+            
+            elements.battleArea.style.display = 'block';
+            elements.enemyIcon.textContent = enemy.icon;
+            elements.enemyName.textContent = enemy.name;
+            
+            const healthPercent = (enemy.health / enemy.maxHealth) * 100;
+            elements.enemyHealthFill.style.width = healthPercent + '%';
+            elements.enemyHealthText.textContent = enemy.health + '/' + enemy.maxHealth;
+        }
+
+        function updateInventory() {
+            elements.inventory.innerHTML = '';
+            gameState.player.inventory.forEach((item, index) => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'item';
+                
+                // Добавляем классы в зависимости от типа предмета
+                if (item.type === 'consumable') {
+                    itemElement.classList.add('consumable');
+                } else if (item.type === 'weapon') {
+                    itemElement.classList.add('usable');
+                }
+                
+                itemElement.textContent = item.name;
+                itemElement.onclick = () => useItem(index);
+                elements.inventory.appendChild(itemElement);
+            });
+        }
+
+        function useItem(itemIndex) {
+            const item = gameState.player.inventory[itemIndex];
+            const player = gameState.player;
+            
+            switch(item.type) {
+                case 'consumable':
+                    // Использование расходника (зелья)
+                    if (item.effect.health) {
+                        const healAmount = item.effect.health;
+                        const newHealth = Math.min(player.health + healAmount, player.maxHealth);
+                        const actualHeal = newHealth - player.health;
+                        
+                        player.health = newHealth;
+                        gameState.player.inventory.splice(itemIndex, 1); // Удаляем предмет из инвентаря
+                        
+                        addLogEntry(`Вы использовали ${item.name} и восстановили ${actualHeal} здоровья!`, "heal");
+                    }
+                    
+                    if (item.effect.mana) {
+                        const manaAmount = item.effect.mana;
+                        const newMana = Math.min(player.mana + manaAmount, player.maxMana);
+                        const actualMana = newMana - player.mana;
+                        
+                        player.mana = newMana;
+                        gameState.player.inventory.splice(itemIndex, 1); // Удаляем предмет из инвентаря
+                        
+                        addLogEntry(`Вы использовали ${item.name} и восстановили ${actualMana} маны!`, "spell");
+                    }
+                    break;
+                    
+                case 'weapon':
+                    // Одевание оружия (в этой простой версии просто показываем сообщение)
+                    addLogEntry(`Вы экипировали ${item.name}. Урон: ${item.damage}`);
+                    break;
+                    
+                case 'accessory':
+                    // Использование аксессуара
+                    if (item.effect.maxMana) {
+                        player.maxMana += item.effect.maxMana;
+                        player.mana = player.maxMana; // Восстанавливаем ману полностью
+                        gameState.player.inventory.splice(itemIndex, 1);
+                        addLogEntry(`Вы надели ${item.name}. Максимальная мана увеличена на ${item.effect.maxMana}!`, "spell");
+                    }
+                    break;
+                    
+                default:
+                    addLogEntry(`Вы не знаете, как использовать ${item.name}.`);
+                    break;
+            }
+            
+            updateUI();
+        }
+
+        function addLogEntry(message, type = "normal") {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            
+            if (type === "spell") {
+                logEntry.classList.add('spell');
+            } else if (type === "quest") {
+                logEntry.classList.add('quest');
+            } else if (type === "danger") {
+                logEntry.classList.add('danger');
+            } else if (type === "heal") {
+                logEntry.classList.add('heal');
+            }
+            
+            logEntry.textContent = message;
+            elements.eventLog.appendChild(logEntry);
+            elements.eventLog.scrollTop = elements.eventLog.scrollHeight;
+        }
+
+        function handleAction(action) {
+            switch(action.type) {
+                case 'travel':
+                    // При возвращении в деревню есть шанс начать осаду
+                    if (action.target === "village" && !gameState.siegeActive && Math.random() < 0.3) {
+                        startSiege();
+                    }
+                    
+                    gameState.currentLocation = action.target;
+                    updateLocation();
+                    addLogEntry(`Вы переместились в новую локацию.`);
+                    break;
+                    
+                case 'explore':
+                    const exploreEvents = [
+                        "Вы нашли 5 золотых монет!",
+                        "Вы встретили дружелюбного енота.",
+                        "Ничего интересного не произошло.",
+                        "Вы нашли странный артефакт."
+                    ];
+                    const randomEvent = exploreEvents[Math.floor(Math.random() * exploreEvents.length)];
+                    addLogEntry(randomEvent);
+                    
+                    if (randomEvent.includes("золотых")) {
+                        gameState.player.gold += 5;
+                        addLogEntry("+5 золота!");
+                    }
+                    break;
+                    
+                case 'hunt':
+                    startBattle("hunt");
+                    break;
+                    
+                case 'spell':
+                    castSpell(action.spell);
+                    break;
+                    
+                case 'buy':
+                    if (gameState.player.gold >= action.cost) {
+                        gameState.player.gold -= action.cost;
+                        gameState.player.inventory.push(action.item);
+                        gameState.purchasesCount++;
+                        
+                        // Если купили 3 товара, торговец становится счастливым
+                        if (gameState.purchasesCount >= 3 && !gameState.merchantHappy) {
+                            gameState.merchantHappy = true;
+                            addLogEntry("Торговец радостно улыбается: 'Спасибо за покупки! Бизнес пошел в гору!'", "quest");
+                        }
+                        
+                        addLogEntry(`Вы купили: ${action.item.name}`);
+                        updateUI();
+                        updateLocation(); // Обновляем кнопки, т.к. количество золота изменилось
+                    } else {
+                        addLogEntry("Недостаточно золота!");
+                    }
+                    break;
+                    
+                case 'dialogue':
+                    let dialogue;
+                    if (gameState.merchantHappy) {
+                        dialogue = "Торговец благодарит вас: 'Спасибо, что поддерживаете мой бизнес!'";
+                    } else if (gameState.purchasesCount > 0) {
+                        dialogue = "Торговец с надеждой смотрит на вас: 'Надеюсь, бизнес наладится...'";
+                    } else {
+                        dialogue = "Торговец жалуется: 'Плохие продажи в последнее время...'";
+                    }
+                    addLogEntry(dialogue);
+                    break;
+                    
+                case 'defend':
+                    startBattle("siege");
+                    break;
+                    
+                default:
+                    addLogEntry("Это действие пока не реализовано.");
+                    break;
+            }
+            
+            updateUI();
+        }
+
+        function startBattle(type) {
+            let enemy;
+            if (type === "hunt") {
+                enemy = {...gameState.huntEnemies[Math.floor(Math.random() * gameState.huntEnemies.length)]};
+            } else if (type === "siege") {
+                enemy = {...gameState.siegeEnemies[Math.floor(Math.random() * gameState.siegeEnemies.length)]};
+            }
+            
+            gameState.currentBattle = {
+                enemy: enemy,
+                type: type
+            };
+            
+            addLogEntry(`Вы встретили ${enemy.name}!`, "danger");
+            updateBattleUI(enemy);
+            
+            // Добавляем боевые действия
+            elements.actions.innerHTML = '';
+            
+            const attackBtn = document.createElement('button');
+            attackBtn.className = 'action-btn battle-btn';
+            attackBtn.textContent = '⚔️ Атаковать';
+            attackBtn.onclick = () => playerAttack();
+            elements.actions.appendChild(attackBtn);
+            
+            const spellBtn = document.createElement('button');
+            spellBtn.className = 'action-btn spell-btn';
+            spellBtn.textContent = '🔮 Использовать заклинание';
+            spellBtn.onclick = () => showSpells();
+            elements.actions.appendChild(spellBtn);
+            
+            const itemBtn = document.createElement('button');
+            itemBtn.className = 'action-btn';
+            itemBtn.textContent = '🎒 Использовать предмет';
+            itemBtn.onclick = () => showBattleItems();
+            elements.actions.appendChild(itemBtn);
+            
+            const fleeBtn = document.createElement('button');
+            fleeBtn.className = 'action-btn';
+            fleeBtn.textContent = '🏃 Бежать';
+            fleeBtn.onclick = () => fleeBattle();
+            elements.actions.appendChild(fleeBtn);
+        }
+
+        function playerAttack() {
+            const battle = gameState.currentBattle;
+            const player = gameState.player;
+            const enemy = battle.enemy;
+            
+            // Игрок атакует
+            const playerDamage = 10 + (player.level * 2); // Базовый урон + бонус уровня
+            enemy.health -= playerDamage;
+            
+            addLogEntry(`Вы атакуете и наносите ${playerDamage} урона ${enemy.name}!`);
+            updateBattleUI(enemy);
+            
+            // Проверяем, побежден ли враг
+            if (enemy.health <= 0) {
+                endBattle(true);
+                return;
+            }
+            
+            // Враг атакует
+            addLogEntry(`${enemy.name} атакует и наносит ${enemy.damage} урона!`);
+            player.health -= enemy.damage;
+            
+            updateUI();
+            
+            // Проверяем смерть игрока
+            if (player.health <= 0) {
+                endBattle(false);
+            }
+        }
+
+        function castSpellInBattle(spellIndex) {
+            const battle = gameState.currentBattle;
+            const player = gameState.player;
+            const enemy = battle.enemy;
+            const spell = player.spells[spellIndex];
+            
+            if (player.mana < spell.cost) {
+                addLogEntry("Недостаточно маны для использования заклинания!");
+                return;
+            }
+            
+            player.mana -= spell.cost;
+            addLogEntry(`Вы используете заклинание "${spell.name}"!`, "spell");
+            
+            if (spell.damage) {
+                enemy.health -= spell.damage;
+                addLogEntry(`Заклинание наносит ${spell.damage} урона ${enemy.name}!`);
+                updateBattleUI(enemy);
+                
+                // Проверяем, побежден ли враг
+                if (enemy.health <= 0) {
+                    endBattle(true);
+                    return;
+                }
+            }
+            
+            if (spell.heal) {
+                const newHealth = Math.min(player.health + spell.heal, player.maxHealth);
+                const actualHeal = newHealth - player.health;
+                player.health = newHealth;
+                addLogEntry(`Вы восстанавливаете ${actualHeal} здоровья!`, "heal");
+            }
+            
+            // Враг атакует
+            addLogEntry(`${enemy.name} атакует и наносит ${enemy.damage} урона!`);
+            player.health -= enemy.damage;
+            
+            updateUI();
+            
+            // Проверяем смерть игрока
+            if (player.health <= 0) {
+                endBattle(false);
+            }
+        }
+
+        function showSpells() {
+            elements.actions.innerHTML = '';
+            
+            gameState.player.spells.forEach((spell, index) => {
+                const spellBtn = document.createElement('button');
+                spellBtn.className = 'action-btn spell-btn';
+                spellBtn.textContent = `${spell.name} (${spell.cost} маны)`;
+                spellBtn.onclick = () => castSpellInBattle(index);
+                
+                if (gameState.player.mana < spell.cost) {
+                    spellBtn.disabled = true;
+                }
+                
+                elements.actions.appendChild(spellBtn);
+            });
+            
+            const backBtn = document.createElement('button');
+            backBtn.className = 'action-btn';
+            backBtn.textContent = '⬅️ Назад';
+            backBtn.onclick = () => startBattle(gameState.currentBattle.type);
+            elements.actions.appendChild(backBtn);
+        }
+
+        function showBattleItems() {
+            elements.actions.innerHTML = '';
+            
+            gameState.player.inventory.forEach((item, index) => {
+                const itemBtn = document.createElement('button');
+                itemBtn.className = 'action-btn';
+                itemBtn.textContent = item.name;
+                itemBtn.onclick = () => {
+                    useItem(index);
+                    // После использования предмета враг атакует
+                    const battle = gameState.currentBattle;
+                    const player = gameState.player;
+                    const enemy = battle.enemy;
+                    
+                    addLogEntry(`${enemy.name} атакует и наносит ${enemy.damage} урона!`);
+                    player.health -= enemy.damage;
+                    
+                    updateUI();
+                    
+                    // Проверяем смерть игрока
+                    if (player.health <= 0) {
+                        endBattle(false);
+                    } else {
+                        startBattle(gameState.currentBattle.type);
+                    }
+                };
+                elements.actions.appendChild(itemBtn);
+            });
+            
+            const backBtn = document.createElement('button');
+            backBtn.className = 'action-btn';
+            backBtn.textContent = '⬅️ Назад';
+            backBtn.onclick = () => startBattle(gameState.currentBattle.type);
+            elements.actions.appendChild(backBtn);
+        }
+
+        function fleeBattle() {
+            const battle = gameState.currentBattle;
+            const enemy = battle.enemy;
+            
+            addLogEntry(`Вы сбежали от ${enemy.name}!`);
+            endBattle(false);
+        }
+
+        function endBattle(victory) {
+            const battle = gameState.currentBattle;
+            const enemy = battle.enemy;
+            const player = gameState.player;
+            
+            if (victory) {
+                let expReward = enemy.exp;
+                let goldReward = enemy.gold;
+                
+                // Двойная награда за защиту деревни
+                if (battle.type === "siege") {
+                    expReward *= 2;
+                    goldReward *= 2;
+                }
+                
+                addLogEntry(`Вы победили ${enemy.name} и получили ${expReward} опыта и ${goldReward} золота!`, "quest");
+                addExperience(expReward);
+                player.gold += goldReward;
+                
+                // Для осады уменьшаем счетчик
+                if (battle.type === "siege") {
+                    gameState.siegeCounter--;
+                    
+                    if (gameState.siegeCounter <= 0) {
+                        endSiege();
+                    }
+                }
+            }
+            
+            gameState.currentBattle = null;
+            updateBattleUI(null);
+            updateLocation();
+            updateUI();
+        }
+
+        function castSpell(spellIndex) {
+            const spell = gameState.player.spells[spellIndex];
+            const player = gameState.player;
+            
+            if (player.mana < spell.cost) {
+                addLogEntry("Недостаточно маны для использования заклинания!");
+                return;
+            }
+            
+            player.mana -= spell.cost;
+            addLogEntry(`Вы используете заклинание "${spell.name}"!`, "spell");
+            
+            if (spell.damage) {
+                // Наносим урон случайному врагу (вне боя)
+                const enemy = gameState.huntEnemies[Math.floor(Math.random() * gameState.huntEnemies.length)];
+                addLogEntry(`Заклинание наносит ${spell.damage} урона ${enemy.name}!`);
+                
+                // Получаем опыт за использование заклинания
+                addExperience(5);
+            }
+            
+            if (spell.heal) {
+                const newHealth = Math.min(player.health + spell.heal, player.maxHealth);
+                const actualHeal = newHealth - player.health;
+                player.health = newHealth;
+                addLogEntry(`Вы восстанавливаете ${actualHeal} здоровья!`, "heal");
+            }
+            
+            updateUI();
+        }
+
+        function startSiege() {
+            gameState.siegeActive = true;
+            gameState.siegeCounter = 3; // Нужно победить 3 волны врагов
+            addLogEntry("🚨 ТРЕВОГА! Деревня подверглась нападению бандитов! Защитите жителей!", "danger");
+            updateLocation();
+        }
+
+        function endSiege() {
+            gameState.siegeActive = false;
+            addLogEntry("🎉 ПОБЕДА! Вы успешно защитили деревню от бандитов! Жители в безопасности!", "quest");
+            
+            // Дополнительная награда за защиту деревни
+            gameState.player.gold += 100;
+            addExperience(50);
+            addLogEntry("Жители деревни в знак благодарности подарили вам 100 золота!", "quest");
+            
+            updateLocation();
+        }
+
+        function addExperience(exp) {
+            if (exp > 0) {
+                gameState.player.experience += exp;
+                addLogEntry(`Получено опыта: ${exp}`);
+                
+                if (gameState.player.experience >= gameState.player.nextLevelExp) {
+                    levelUp();
+                }
+            }
+            
+            updateUI();
+        }
+
+        function levelUp() {
+            const player = gameState.player;
+            player.level++;
+            player.experience -= player.nextLevelExp;
+            player.nextLevelExp = Math.floor(player.nextLevelExp * 1.5);
+            player.maxHealth += 20;
+            player.health = player.maxHealth;
+            player.maxMana += 10;
+            player.mana = player.maxMana;
+            
+            addLogEntry(`🎉 Поздравляем! Вы достигли уровня ${player.level}!`, "quest");
+            
+            // Если остался опыт после повышения уровня, продолжаем повышать
+            if (player.experience >= player.nextLevelExp) {
+                levelUp();
+            }
+        }
+
+        function showDeathScreen() {
+            elements.deathLevel.textContent = gameState.player.level;
+            elements.deathGold.textContent = gameState.player.gold;
+            elements.deathScreen.style.display = 'flex';
+        }
+
+        function restartGame() {
+            // Сбрасываем игровое состояние
+            gameState.player = {
+                name: "Искатель Приключений",
+                level: 1,
+                health: 100,
+                maxHealth: 100,
+                mana: 50,
+                maxMana: 50,
+                experience: 0,
+                nextLevelExp: 100,
+                gold: 50,
+                inventory: [
+                    { name: "❤️ Малое зелье здоровья", type: "consumable", effect: { health: 30 } },
+                    { name: "⚔️ Простой меч", type: "weapon", damage: 10 }
+                ],
+                spells: gameState.player.spells // Сохраняем заклинания
+            };
+            
+            gameState.currentLocation = "village";
+            gameState.currentBattle = null;
+            gameState.siegeActive = false;
+            gameState.siegeCounter = 0;
+            gameState.merchantHappy = false;
+            gameState.purchasesCount = 0;
+            
+            elements.deathScreen.style.display = 'none';
+            updateBattleUI(null);
+            
+            // Очищаем лог
+            elements.eventLog.innerHTML = '<div class="log-entry">✨ Вы воскресли и начали новое приключение!</div>';
+            
+            updateUI();
+            updateLocation();
+        }
+
+        // Инициализация игры
+        function initGame() {
+            updateUI();
+            updateLocation();
+            addLogEntry("🎮 Игра началась! Исследуйте мир и выполняйте задания.");
+            addLogEntry("💡 Подсказка: кликайте на предметы в инвентаре, чтобы использовать их!");
+        }
+
+        // Запуск игры при загрузке страницы
+        window.onload = initGame;
+    </script>
+</body>
+</html>
